@@ -1,32 +1,29 @@
-# - Notes - #
-# Current Share Price, Name, P/E value, market cap, Amount, 
-# Dividend, ex-dividend,  yield
-
+# -*- coding: utf-8 -*-
 import os
+import sys
+import json
+import urllib3
+import requests
+import time
+
+from operator import itemgetter, attrgetter
+from bs4 import BeautifulSoup
+
+try:
+    from PySide2.QtWidgets import *
+    from PySide2.QtGui import *
+    from PySide2.QtCore import *
+except:
+    from PyQt4.QtGui import *
+    from PyQt4.QtCore import *
+
+# - config - #
+online = False
 
 # - dataset - #
 scriptpath = "C:\\Users\\tobia\\Google Drive\\scripts\\albionAuctioneer\\"
 dataset = os.path.join(scriptpath,"dataset")
 icons = os.path.join(scriptpath,"icons")
-
-# -*- coding: utf-8 -*-
-import sys
-import json
-import urllib3
-
-from PySide2.QtWidgets import *
-from PySide2.QtGui import *
-from PySide2.QtCore import *
-
-# -*- imports -*-
-from bs4 import BeautifulSoup
-import requests
-from operator import itemgetter, attrgetter
-import time
-
-
-
-http = urllib3.PoolManager()
 
 # - styles - #
 
@@ -64,7 +61,7 @@ class albionAuctioneer(QWidget):
             self.catagorybutton.clicked.connect(self.showHide)
             self.catagorybutton.setObjectName(w)
             self.catagorybutton.setFocusPolicy(Qt.NoFocus)
-            self.catagorybutton.setFixedSize(907,30)
+            self.catagorybutton.setFixedSize(1015,30)
             self.catagorybutton.setLayoutDirection(Qt.RightToLeft)
             self.catagorybutton.setIcon(self.hideicon)
             self.catagorybutton.setStyleSheet(darkstyle)
@@ -82,11 +79,13 @@ class albionAuctioneer(QWidget):
         # - widgets - #
         self.catagoriesui = QComboBox()
         self.catagoriesui.addItems(["accessories","armor","artefacts","cityresources","consumables","farmables","furniture","gatherergear","luxurygoods","magic","materials","melee","mounts","offhand","products","ranged","resources","token","tools","trophies"])
+        self.catagoriesui.setFixedSize(499,20)
         self.tierui = QComboBox()
         self.tierui.addItems(["all","T1","T2","T3","T4","T5","T6","T7","T8"])
+        self.tierui.setFixedSize(499,20)
         self.generateui = QPushButton("generate")
         self.generateui.clicked.connect(self.generate)
-        self.generateui.setFixedSize(403,20)
+        self.generateui.setFixedSize(430,20)
 
         self.ccity = QCheckBox("Caerleon")
         self.lcity = QCheckBox("Lymhurst")
@@ -94,9 +93,12 @@ class albionAuctioneer(QWidget):
         self.bcity = QCheckBox("Bridgewatch")
         self.tcity = QCheckBox("Thetford")
         self.fcity = QCheckBox("Fort Sterling")
-        self.margincap = QLineEdit("100")
+        self.margincap = QLineEdit("50")
         self.margincap.setAlignment(Qt.AlignCenter)
         self.margincap.setFixedSize(30,20)
+        self.hourcap = QLineEdit("1")
+        self.hourcap.setAlignment(Qt.AlignCenter)
+        self.hourcap.setFixedSize(30,20)
 
         self.toplayout = QHBoxLayout()
         self.botlayout = QHBoxLayout()
@@ -104,13 +106,12 @@ class albionAuctioneer(QWidget):
         self.controllayout.addLayout(self.toplayout)
         self.controllayout.addLayout(self.botlayout)
 
-        [self.botlayout.addWidget(w) for w in [self.ccity,self.lcity,self.mcity,self.bcity,self.tcity,self.fcity,self.margincap,self.generateui]]
+        [self.botlayout.addWidget(w) for w in [self.ccity,self.lcity,self.mcity,self.bcity,self.tcity,self.fcity,self.margincap,self.hourcap,self.generateui]]
         [self.toplayout.addWidget(w) for w in [self.catagoriesui,self.tierui]]
 
 
         # - set main layout - #
         self.setLayout(self.mainLayout)
-        self.setWindowTitle('no asset found')
         self.mainLayout.setSizeConstraint(self.mainLayout.SetFixedSize)
 
         # - set main layout - #
@@ -166,8 +167,6 @@ class albionAuctioneer(QWidget):
             self.marginlabel.setFixedSize(50,h)
             self.marginlabel.setAlignment(Qt.AlignCenter)
 
-            #setPixmap(QPixmap(icons+"\\silver.png"))
-
             self.marginplabel = QLabel(str(self.auction[7])+" %")
             self.marginplabel.setFixedSize(50,h)
             self.marginplabel.setAlignment(Qt.AlignCenter)
@@ -178,7 +177,6 @@ class albionAuctioneer(QWidget):
             [w.setStyleSheet(lightstyle) for w in widgets]
 
             self.travelicon.setStyleSheet(blackstyle)
-            #self.marginlabel.setStyleSheet("QLabel {background-image: 'C:\\Users\\tobia\\Google Drive\\scripts\\albionAuctioneer\\icons\\silver.png';}")
 
             self.datalayout.addWidget(self.auctionwidget)
 
@@ -202,8 +200,6 @@ class albionAuctioneer(QWidget):
                 print(dataitem)
                 self.allauctions.append(dataitem)
 
-        #self.allitems = ["T4_MOUNT_HORSE","T5_MOUNT_HORSE","T6_MOUNT_HORSE"]
-
         # - TABLE MODEL - #
 
         for item in self.allauctions:
@@ -211,6 +207,7 @@ class albionAuctioneer(QWidget):
             self.itemtier = item.split(":")[2]
             self.itemid = item.split(":")[3]
 
+            http = urllib3.PoolManager()
             page = "https://www.albion-online-data.com/api/v1/stats/prices/%s" % (self.itemid)
             time.sleep(1)
             heroes = http.request('GET', page)
@@ -255,7 +252,7 @@ class albionAuctioneer(QWidget):
     # - Function to set UI styles - #
     def styles(self):
         self.setStyleSheet(mainstyle)
-        [w.setStyleSheet(lightstyle) for w in [self.catagoriesui,self.tierui,self.margincap,self.generateui]]
+        [w.setStyleSheet(lightstyle) for w in [self.catagoriesui,self.tierui,self.margincap,self.hourcap,self.generateui]]
         [w.setStyleSheet(darktextstyle) for w in [self.ccity,self.lcity,self.mcity,self.bcity,self.tcity,self.fcity]]
 
     # - Function for clearing the browser layout                           - #
