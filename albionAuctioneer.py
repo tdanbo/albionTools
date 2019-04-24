@@ -5,6 +5,8 @@ import json
 import urllib3
 import requests
 import time
+from datetime import datetime, timezone
+import pytz
 
 from operator import itemgetter, attrgetter
 from bs4 import BeautifulSoup
@@ -194,7 +196,8 @@ class albionAuctioneer(QWidget):
         striplines = [line.rstrip('\n') for line in lines]
         self.allauctions = []
         for dataitem in striplines:
-            if self.tier == "all":
+            if self.tier == "l":
+                print(dataitem)
                 self.allauctions.append(dataitem)
             elif self.tier == dataitem.split(":")[2]:
                 print(dataitem)
@@ -215,8 +218,23 @@ class albionAuctioneer(QWidget):
             self.pricedata = []
             for i in heroes_dict:
                 if i['city'] in ["Caerleon","Lymhurst","Martlock","Bridgewatch","Thetford","Fort Sterling"]:
-                    self.data = (i['city'], i['sell_price_min'], i['sell_price_min_date'])
-                    self.pricedata.append(self.data)
+                    if i['sell_price_min_date'] != "0001-01-01T00:00:00":
+                        currenttime = datetime.now(tz=pytz.utc).replace(microsecond=0)
+                        datatime = datetime.strptime(i['sell_price_min_date'], '%Y-%m-%dT%H:%M:%S')
+                        currenttime = currenttime.replace(tzinfo=None)
+                        difference = currenttime - datatime
+                        print(difference)
+                        if "day" not in str(difference).split(":")[0]:
+                            if int(str(difference).split(":")[0]) < int(self.hourcap.text()):
+                                print("good data")
+                                self.data = (i['city'], i['sell_price_min'], i['sell_price_min_date'])
+                                self.pricedata.append(self.data)
+                            else:
+                                print("old data")
+                        else:
+                            pass
+                    else:
+                        pass
                 else:
                     pass
 
@@ -280,3 +298,4 @@ class albionAuctioneer(QWidget):
 panel = albionAuctioneer()
 panel.show()
 sys.exit(app.exec_())
+
