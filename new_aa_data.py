@@ -31,7 +31,7 @@ def data(cityfromcap, citytocap, catagories, tiers, cities, hourcap, margincaplo
                                 currenttime = currenttime.replace(tzinfo=None)
                                 difference = (currenttime-datatime).seconds/60
                                 diffdays = (currenttime-datatime).days
-                                if diffdays > 3:
+                                if diffdays > 0:
                                     pass
                                 else:
                                     if difference < int(hourcap):
